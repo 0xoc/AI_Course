@@ -1,6 +1,6 @@
 import itertools
 import random
-
+import copy
 
 class Minesweeper():
     """
@@ -98,6 +98,9 @@ class Sentence():
     def __eq__(self, other):
         return self.cells == other.cells and self.count == other.count
 
+    def __hash__(self):
+        return hash(tuple(self.cells))
+    
     def __str__(self):
         return f"{self.cells} = {self.count}"
 
@@ -105,28 +108,38 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        raise NotImplementedError
+        if len(self.cells) == self.count:
+            return copy.deepcopy(self.cells)
+        
+        return ()
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        raise NotImplementedError
+        
+        if self.count == 0:
+            return copy.deepcopy(self.cells)
+
+        return ()
+
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        self.cells.remove(cell)
-        self.count -= 1
+        if cell in self.cells:
+            self.cells.remove(cell)
+            self.count -= 1
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        self.cells.remove(cell)
+        if cell in self.cells:
+            self.cells.remove(cell)
 
 
 class MinesweeperAI():
@@ -148,17 +161,23 @@ class MinesweeperAI():
         self.safes = set()
 
         # List of sentences about the game known to be true
-        self.knowledge = []
+        self.knowledge = set()
     
     def get_neighbors(self, cell):
         """
         return the neighboring cells
         """
-        n  = []
-        for i in [1,-1]:
-            for j in [1,-1]:
-                if 0 <= cell[0] + i < self.width and 0 <= cell[1] + j < self.height:
-                    n.append((cell[0] + i, cell[1] + j))
+        n = []
+        for i in range(cell[0] - 1, cell[0] + 2):
+            for j in range(cell[1] - 1, cell[1] + 2):
+
+                # Ignore the cell itself
+                if (i, j) == cell:
+                    continue
+
+                # Update count if cell in bounds and is mine
+                if 0 <= i < self.height and 0 <= j < self.width:
+                    n.append((i,j))
         return n
 
     def mark_mine(self, cell):
@@ -166,6 +185,7 @@ class MinesweeperAI():
         Marks a cell as a mine, and updates all knowledge
         to mark that cell as a mine as well.
         """
+
         self.mines.add(cell)
         for sentence in self.knowledge:
             sentence.mark_mine(cell)
@@ -194,18 +214,59 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        e = Sentence([],0)
         self.moves_made.add(cell)
         self.mark_safe(cell)
-        self.knowledge.append(Sentence(self.get_neighbors(cell), count))
-        visited = []
-        import copy
-        tovisit = copy.deepcopy(self.knowledge)
+        
+        new_sentences = set()
+        new_sentences.add(Sentence(self.get_neighbors(cell), count))
 
-        while len(tovisit):
-            s = tovisit.pop()
-            visited.append(s)
+        while len(new_sentences):
+            # add them to AI knowlage
+            self.knowledge.update(new_sentences)
 
+            # clear
+            new_sentences = set()
+
+            # pass 0: Let me tell you what I know to be safe or mine
+            for safe in self.safes:
+                for sentence in self.knowledge:
+                    sentence.mark_safe(safe)
+            for mine in self.mines:
+                for sentence in self.knowledge:
+                    sentence.mark_mine(safe)
+
+            # pass 1: Given what you all know now, is there anything you could tell us for sure
+            need_change = True
+            while need_change:
+                need_change = False
+                for sentence in self.knowledge:
+                    
+                    safes = sentence.known_safes()
+                    mines = sentence.known_mines()
+                    for safe in safes:
+                        if safe not in self.safes:
+                            self.mark_safe(safe)
+                            need_change = True
+                    
+                    for mine in mines:
+                        if mine not in self.mines:
+                            self.mark_mine(mine)
+                            need_change = True
             
+            # pass 2: Let's see if toghether we can deduce some more information
+            for sentence in self.knowledge:
+                for other_sentence in self.knowledge:
+                    if sentence == other_sentence:
+                        continue
+                    if sentence.cells.issubset(other_sentence.cells):
+                        new_cells = other_sentence.cells - sentence.cells
+                        s = Sentence(list(new_cells),other_sentence.count - sentence.count )
+
+                        if s in self.knowledge:
+                            continue
+
+                        new_sentences.add(s)
 
 
     def make_safe_move(self):
@@ -217,6 +278,10 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
+        for safe in self.safes:
+            if safe not in self.moves_made:
+                return safe
+        
         return None
 
     def make_random_move(self):
@@ -226,4 +291,13 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        return (0,0)
+        move = random.randrange(self.width), random.randrange(self.height)
+
+        if self.width * self.height == len(self.moves_made) + len(self.mines):
+            return None
+
+        while move in self.moves_made or move in self.mines:
+            move = random.randrange(self.width), random.randrange(self.height)
+        
+        return move
+
