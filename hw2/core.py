@@ -1,12 +1,4 @@
 import matplotlib.pyplot as plt
-import math
-
-
-def f(x):
-    """
-    function of the question
-    """
-    return math.sin(10 * math.pi * x) / 2 * x + math.pow(x - 1, 4)
 
 
 class Annotation:
@@ -32,8 +24,10 @@ def plot_func(func, x_min, x_max, annotation=None):
 
     plt.plot(x_list, y_list)
     if annotation:
-        plt.annotate(s=annotation.text, xy=(annotation.x, func(annotation.x)))
-    plt.show()
+        plt.annotate(s=annotation.text,
+                     xy=(annotation.x, func(annotation.x)),
+                     xytext=(annotation.x, 3),
+                     arrowprops=dict(facecolor='black', shrink=0.05))
 
 
 def hill_climbing(func, start_x, is_max):
@@ -82,6 +76,3 @@ def hill_climbing(func, start_x, is_max):
             current_x += epsilon
         else:
             current_x -= epsilon
-
-
-plot_func(f, 0.5, 2.5, Annotation("Peak", hill_climbing(f, 1.6, False)))
