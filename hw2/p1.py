@@ -4,8 +4,12 @@ Problem 1
 import math
 import random
 import matplotlib.pyplot as plt
+from core import plot_func, Annotation, hill_climbing
 
-from core import hill_climbing, plot_func, Annotation
+max_iterations = 1000  # total number of iterations
+t_start = math.inf  # starting temperature
+t_end = 0.00001  # ending temperature
+reduction_factor = (t_end / t_start) ** (1 / max_iterations)
 
 
 def f(x):
@@ -15,29 +19,81 @@ def f(x):
     return math.sin(10 * math.pi * x) / 2 * x + math.pow(x - 1, 4)
 
 
-def global_minima_hill_climbing(func, x_start, x_end):
+def p(delta_e, t):
     """
-    global minima using hill climbing
+    probability of next move
     """
-    attempts = 1000
 
-    # initial value
-    global_min_x = hill_climbing(func, random.uniform(x_start, x_end), False)
+    return math.exp(- delta_e / t)
 
-    for i in range(attempts):
-        tmp_x = hill_climbing(func, random.uniform(x_start, x_end), False)
 
-        # better minimum found
-        if func(tmp_x) < func(global_min_x):
-            global_min_x = tmp_x
+def acceptance_probability():
+    """
+    acceptance probability at the given iteration
+    """
 
-    return global_min_x
+    return random.random()
+
+
+def iterative_hill_climbing(func, x_current, t, x_start, x_end):
+    # choose random x and remove it from the list
+    x_random = random.uniform(x_start, x_end)
+    delta_e = func(x_random) - func(x_current)
+
+    if delta_e < 0:
+        # take the move
+        return x_random
+
+    # decide based on probability
+    if p(delta_e, t) > acceptance_probability():
+        return x_random
+
+    return x_current
+
+
+def temperature(iteration):
+    """
+    temperature at the given iteration
+    """
+    return t_start * (reduction_factor ** iteration)
+
+
+def simulated_annealing(func, x_start, x_end):
+    x_current = x_start
+
+    # generate an approximation of the solution
+    for i in range(1, max_iterations):
+        x_current = iterative_hill_climbing(func, x_current,
+                                            temperature(i), x_start, x_end)
+
+    # use hill climbing to generate accurate solution
+    return hill_climbing(func, x_current, False)
 
 
 def p1_1():
     """
     Problem 1, 1: Hill Climbing
     """
-    plot_func(f, 0.5, 2.5, Annotation("Global Minima", global_minima_hill_climbing(f, 0.5, 2.5)))
+    solution = simulated_annealing(f, 0.5, 2.5)
+    plot_func(f, 0.5, 2.5, Annotation("(%f,%f)" % (solution, f(solution)), solution))
     plt.show()
 
+
+def test():
+    print("Calculating Accuracy ...")
+    number_of_tests = 100
+    actual_solution = 1.5498
+    correct = 0
+
+    for i in range(number_of_tests):
+        print('{0}/{1}'.format(i, number_of_tests), end='\r')
+        solution = simulated_annealing(f, 0.5, 2.5)
+
+        if math.fabs(solution - actual_solution) < 0.001:
+            correct += 1
+
+    print("Accuracy: %.2f percent" % (correct / number_of_tests * 100))
+
+
+test()
+p1_1()
