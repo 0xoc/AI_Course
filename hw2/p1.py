@@ -27,14 +27,6 @@ def p(delta_e, t):
     return math.exp(- delta_e / t)
 
 
-def acceptance_probability():
-    """
-    acceptance probability at the given iteration
-    """
-
-    return random.random()
-
-
 def iterative_hill_climbing(func, x_current, t, x_start, x_end):
     # choose random x and remove it from the list
     x_random = random.uniform(x_start, x_end)
@@ -45,7 +37,7 @@ def iterative_hill_climbing(func, x_current, t, x_start, x_end):
         return x_random
 
     # decide based on probability
-    if p(delta_e, t) > acceptance_probability():
+    if p(delta_e, t) > 0:
         return x_random
 
     return x_current
@@ -70,7 +62,7 @@ def simulated_annealing(func, x_start, x_end):
     return hill_climbing(func, x_current, False)
 
 
-def p1_1():
+def p1():
     """
     Problem 1, 1: Hill Climbing
     """
@@ -96,4 +88,4 @@ def test():
 
 
 test()
-p1_1()
+p1()
