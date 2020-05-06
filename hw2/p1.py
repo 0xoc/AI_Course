@@ -34,5 +34,10 @@ def global_minima_hill_climbing(func, x_start, x_end):
     return global_min_x
 
 
-plot_func(f, 0.5, 2.5, Annotation("Global Minima", global_minima_hill_climbing(f, 0.5, 2.5)))
-plt.show()
+def p1_1():
+    """
+    Problem 1, 1: Hill Climbing
+    """
+    plot_func(f, 0.5, 2.5, Annotation("Global Minima", global_minima_hill_climbing(f, 0.5, 2.5)))
+    plt.show()
+
