@@ -4,7 +4,7 @@ Problem 1
 import math
 import random
 import matplotlib.pyplot as plt
-from core import plot_func, Annotation, hill_climbing
+from core import plot_func, Annotation
 
 max_iterations = 1000  # total number of iterations
 t_start = math.inf  # starting temperature
@@ -25,6 +25,54 @@ def p(delta_e, t):
     """
 
     return math.exp(- delta_e / t)
+
+
+def hill_climbing(func, start_x, is_max):
+    """
+    find max/min using hill_climbing from the starting point
+    """
+    epsilon = 0.00001
+    current_x = start_x
+
+    def _best(_up, _down):
+        """
+        return the best, depending on is_max
+        """
+
+        if _up == _down:
+            return None
+
+        if is_max:
+            # return the bigger
+            if _up > _down:
+                return _up
+            return _down
+
+        # return the bigger
+        if _up < _down:
+            return _up
+        return _down
+
+    while True:
+        up = func(current_x + epsilon)
+        current = func(current_x)
+        down = func(current_x - epsilon)
+
+        # we are at a peak, we are done
+        if (_best(current, up) == current and
+                _best(current, down) == current):
+            return current_x
+
+        best = _best(up, down)
+
+        # we are stock a flat surface
+        if best is None:
+            return current_x
+
+        if best == up:
+            current_x += epsilon
+        else:
+            current_x -= epsilon
 
 
 def iterative_hill_climbing(func, x_current, t, x_start, x_end):
