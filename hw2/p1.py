@@ -72,10 +72,11 @@ def p1():
 
 
 def test():
-    print("Calculating Accuracy ...")
-    number_of_tests = 100
+    number_of_tests = 500
     actual_solution = 1.5498
     correct = 0
+
+    print("Running system test on %d test cases ..." % number_of_tests)
 
     for i in range(number_of_tests):
         print('{0}/{1}'.format(i, number_of_tests), end='\r')

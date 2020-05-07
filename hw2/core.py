@@ -34,7 +34,7 @@ def hill_climbing(func, start_x, is_max):
     """
     find max/min using hill_climbing from the starting point
     """
-    epsilon = 0.001
+    epsilon = 0.00001
     current_x = start_x
 
     def _best(_up, _down):
