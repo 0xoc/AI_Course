@@ -55,10 +55,13 @@ class Individual:
         Random reproduction
         """
         c = random.randint(0, 4)
-        pile1 = father.pile1[:c] + mother.pile1[c:]
-        pile2 = list(set(cards) - set(pile1))
+        pile1_a = father.pile1[:c] + mother.pile1[c:]
+        pile1_b = mother.pile1[c:] + father.pile1[:c]
 
-        return Individual(pile1, pile2)
+        pile2_a = list(set(cards) - set(pile1_a))
+        pile2_b = list(set(cards) - set(pile1_b))
+
+        return Individual(pile1_a, pile2_a), Individual(pile1_b, pile2_b)
 
     def mutate(self):
         """
@@ -95,9 +98,12 @@ class Individual:
         print('')
 
     def rep(self):
+
+        _pile1 = copy.deepcopy(self.pile1)
+
         _rep = ""
 
-        for card in self.pile1:
+        for card in _pile1:
             _rep += str(card)
 
         return _rep
@@ -105,46 +111,54 @@ class Individual:
     def __eq__(self, other):
         return other.rep() == self.rep()
 
+    def __hash__(self):
+        return hash(self.rep())
+
 
 def genetic_solver():
-    size_of_initial_population = 100
-    population = [Individual.random_individual() for i in range(size_of_initial_population)]
-    total_children = 0
+    size_of_initial_population = 50
+    population = set()
+
+    while len(population) < size_of_initial_population:
+        population.add(Individual.random_individual())
+
+    total_generations = 0
 
     report_data_x = []  # set of points to show on graph
     report_data_y = []  # set of points to show on graph
 
     while True:
-        total_children += 1
-        report_data_x.append(total_children)
+        total_generations += 1
+        current_population = list(copy.deepcopy(population))
+        population = set()
 
-        population_weights = [indv.utility() for indv in population]
+        report_data_x.append(total_generations)
+        population_weights = [indv.utility() for indv in current_population]
 
         report_data_y.append(sum(population_weights) / len(population_weights))
 
-        new_population = copy.deepcopy(population)
-
-        for individual in population:
+        # check for gaol
+        for individual in current_population:
             if individual.is_goal():
-                return individual, total_children, report_data_x, report_data_y
+                return individual, total_generations, report_data_x, report_data_y
+
+        # new generation
+        while len(population) < size_of_initial_population:
 
             # select parents
-            father = np.random.choice(population, 1, population_weights)[0]
-            mother = np.random.choice(population, 1, population_weights)[0]
+            father = np.random.choice(current_population, 1, population_weights)[0]
+            mother = np.random.choice(current_population, 1, population_weights)[0]
 
-            child1 = Individual.reproduce(father, mother)
-            child2 = Individual.reproduce(mother, father)
+            father.mutate()
+            mother.mutate()
 
-            child1.mutate()
-            child2.mutate()
+            child1, child2 = Individual.reproduce(father, mother)
 
             if child1.is_valid():
-                new_population.append(child1)
+                population.add(child1)
 
             if child2.is_valid():
-                new_population.append(child2)
-
-        population = copy.deepcopy(new_population)
+                population.add(child2)
 
 
 def test():
