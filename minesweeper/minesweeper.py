@@ -234,7 +234,7 @@ class MinesweeperAI():
                     sentence.mark_safe(safe)
             for mine in self.mines:
                 for sentence in self.knowledge:
-                    sentence.mark_mine(safe)
+                    sentence.mark_mine(mine)
 
             # pass 1: Given what you all know now, is there anything you could tell us for sure
             need_change = True
